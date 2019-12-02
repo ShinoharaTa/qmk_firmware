@@ -16,36 +16,22 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#ifndef CONFIG_H
-#define CONFIG_H
+#pragma once
 
 #include "config_common.h"
 
-// GCC include 'config.h" sequence in qmk_firmware/keyboards/helix/
-//   -include keyboards/helix/config.h
-//   -include keyboards/helix/rev?/config.h
-//   -include keyboards/helix/rev?/keymaps/MAPNAME/config.h
+// GCC include 'config.h" sequence in qmk_firmware/keyboards/kuro/
+//   -include keyboards/kuro/config.h
+//   -include keyboards/kuro/rev?/config.h
+//   -include keyboards/kuro/rev?/keymaps/MAPNAME/config.h
 //   XXXX.c
 
-#include <serial_config.h>
-
-// GCC include search path in qmk_firmare/keyboards/helix/
+// GCC include search path in qmk_firmare/keyboards/kuro/
 //    #include "..." search starts here:
 //    #include <...> search starts here:
-//     keyboards/helix/rev?/keymaps/MAPNAME
-//     keyboards/helix
-//     keyboards/helix/rev?
+//     keyboards/kuro/rev?/keymaps/MAPNAME
+//     keyboards/kuro
+//     keyboards/kuro/rev?
 //     .
 //     ./tmk_core
 //     ......
-
-#ifdef USE_Link_Time_Optimization
-  // LTO has issues with macros (action_get_macro) and "functions" (fn_actions),
-  //  so just disable them
-  #define NO_ACTION_MACRO
-  #define NO_ACTION_FUNCTION
-
-  #define DISABLE_LEADER
-#endif // USE_Link_Time_Optimization
-
-#endif /* CONFIG_H */

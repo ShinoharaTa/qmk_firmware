@@ -16,8 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#ifndef REV2_CONFIG_H
-#define REV2_CONFIG_H
+#pragma once
 
 /* USB Device descriptor parameter */
 #define VENDOR_ID       0xFEED
@@ -27,8 +26,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #define PRODUCT         Kuro
 #define DESCRIPTION     A split keyboard for the cheap makers
 
-
-#define PREVENT_STUCK_MODIFIERS
 #define TAPPING_FORCE_HOLD
 #define TAPPING_TERM 400
 
@@ -37,19 +34,14 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #define USE_SERIAL
 //#define USE_MATRIX_I2C
 
+/* Soft Serial defines */
+#define SOFT_SERIAL_PIN D2
+#define SERIAL_USE_MULTI_TRANSACTION
+
 /* Select hand configuration */
 #define MASTER_LEFT
 // #define MASTER_RIGHT
 // #define EE_HANDS
-
-// Helix keyboard OLED support
-//      see ./rules.mk: OLED_ENABLE=yes or no
-#ifdef OLED_ENABLE
-  #define SSD1306OLED
-#endif
-
-/* Select rows configuration */
-// Rows are 4 or 5
 
 /* key matrix size */
 // Rows are doubled-up
@@ -67,47 +59,28 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 // #define BACKLIGHT_LEVELS 3
 
 /* Set 0 if debouncing isn't needed */
-#define DEBOUNCING_DELAY 5
+#define DEBOUNCE 5
 
 /* Mechanical locking support. Use KC_LCAP, KC_LNUM or KC_LSCR instead in keymap */
 //#define LOCKING_SUPPORT_ENABLE
 /* Locking resynchronize hack */
 //#define LOCKING_RESYNC_ENABLE
 
-/* key combination for command */
-#define IS_COMMAND() ( \
-    keyboard_report->mods == (MOD_BIT(KC_LSHIFT) | MOD_BIT(KC_RSHIFT)) \
-)
-
 /* ws2812 RGB LED */
 #define RGB_DI_PIN D3
-#define RGBLIGHT_TIMER
-//#define RGBLED_NUM 12    // Number of LEDs. see ./keymaps/default/config.h
-#define ws2812_PORTREG  PORTD
-#define ws2812_DDRREG   DDRD
 
-// Helix keyboard RGB LED support
+//#define RGBLED_NUM 12    // Number of LEDs. see ./keymaps/default/config.h
+
+// Kuro keyboard RGB LED support
 //#define RGBLIGHT_ANIMATIONS : see ./rules.mk: LED_ANIMATIONS = yes or no
 //    see ./rules.mk: LED_BACK_ENABLE or LED_UNDERGLOW_ENABLE set yes
-#ifdef RGBLED_BACK
-  #define RGBLED_NUM 15
-#else
-  #define RGBLED_NUM 6
-#endif
+#define RGBLED_NUM 15
 
 #ifndef IOS_DEVICE_ENABLE
-  #if RGBLED_NUM <= 6
-    #define RGBLIGHT_LIMIT_VAL 255
-  #else
-    #define RGBLIGHT_LIMIT_VAL 120
-  #endif
+  #define RGBLIGHT_LIMIT_VAL 120
   #define RGBLIGHT_VAL_STEP 17
 #else
-  #if RGBLED_NUM <= 6
-    #define RGBLIGHT_LIMIT_VAL 90
-  #else
-    #define RGBLIGHT_LIMIT_VAL 35
-  #endif
+  #define RGBLIGHT_LIMIT_VAL 35
   #define RGBLIGHT_VAL_STEP 4
 #endif
 #define RGBLIGHT_HUE_STEP 10
@@ -145,5 +118,3 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //#define NO_ACTION_MACRO
 //#define NO_ACTION_FUNCTION
 
-
-#endif

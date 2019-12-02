@@ -1,13 +1,14 @@
-#ifndef REV2_H
-#define REV2_CONFIG_H
+#pragma once
 
 #include "../helix.h"
 
 //void promicro_bootloader_jmp(bool program);
 #include "quantum.h"
 
+#ifdef RGBLIGHT_ENABLE
 //rgb led driver
 #include "ws2812.h"
+#endif
 
 #ifdef USE_I2C
 #include <stddef.h>
@@ -47,7 +48,3 @@
     KC_##L10, KC_##L11, KC_##L12, KC_##L13, KC_##L14,                                         KC_##R10, KC_##R11, KC_##R12, KC_##R13, KC_##R14, \
     KC_##L20, KC_##L21, KC_##L22, KC_##L23, KC_##L24, KC_##L25, KC_##L26, KC_##R26, KC_##R25, KC_##R20, KC_##R21, KC_##R22, KC_##R23, KC_##R24 \
   )
-
-
-#endif
-
