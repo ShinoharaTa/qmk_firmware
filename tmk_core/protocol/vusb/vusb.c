@@ -272,7 +272,8 @@ static void send_extra(uint8_t report_id, uint16_t data) {
     last_id   = report_id;
     last_data = data;
 
-    report_extra_t report = {.report_id = report_id, .usage = data};
+    static report_extra_t report;
+    report = (report_extra_t){.report_id = report_id, .usage = data};
     if (usbInterruptIsReadyShared()) {
         usbSetInterruptShared((void *)&report, sizeof(report_extra_t));
     }
@@ -444,19 +445,15 @@ const PROGMEM uchar shared_hid_report[] = {
     0x85, REPORT_ID_MOUSE,  //   Report ID
     0x09, 0x01,             //   Usage (Pointer)
     0xA1, 0x00,             //   Collection (Physical)
-    // Buttons (5 bits)
+    // Buttons (8 bits)
     0x05, 0x09,  //     Usage Page (Button)
     0x19, 0x01,  //     Usage Minimum (Button 1)
-    0x29, 0x05,  //     Usage Maximum (Button 5)
+    0x29, 0x08,  //     Usage Maximum (Button 8)
     0x15, 0x00,  //     Logical Minimum (0)
     0x25, 0x01,  //     Logical Maximum (1)
-    0x95, 0x05,  //     Report Count (5)
+    0x95, 0x08,  //     Report Count (8)
     0x75, 0x01,  //     Report Size (1)
     0x81, 0x02,  //     Input (Data, Variable, Absolute)
-    // Button padding (3 bits)
-    0x95, 0x01,  //     Report Count (1)
-    0x75, 0x03,  //     Report Size (3)
-    0x81, 0x03,  //     Input (Constant)
 
     // X/Y position (2 bytes)
     0x05, 0x01,  //     Usage Page (Generic Desktop)

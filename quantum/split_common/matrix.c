@@ -43,6 +43,7 @@ extern matrix_row_t matrix[MATRIX_ROWS];      // debounced values
 uint8_t thisHand, thatHand;
 
 // user-defined overridable functions
+__attribute__((weak)) void matrix_slave_scan_kb(void) { matrix_slave_scan_user(); }
 __attribute__((weak)) void matrix_slave_scan_user(void) {}
 
 static inline void setPinOutput_writeLow(pin_t pin) {
@@ -60,7 +61,7 @@ static inline void setPinInputHigh_atomic(pin_t pin) {
 
 #ifdef DIRECT_PINS
 
-static void init_pins(void) {
+__attribute__((weak)) void matrix_init_pins(void) {
     for (int row = 0; row < MATRIX_ROWS; row++) {
         for (int col = 0; col < MATRIX_COLS; col++) {
             pin_t pin = direct_pins[row][col];
@@ -71,7 +72,7 @@ static void init_pins(void) {
     }
 }
 
-static bool read_cols_on_row(matrix_row_t current_matrix[], uint8_t current_row) {
+__attribute__((weak)) bool matrix_read_cols_on_row(matrix_row_t current_matrix[], uint8_t current_row) {
     // Start with a clear matrix row
     matrix_row_t current_row_value = 0;
 
@@ -103,20 +104,20 @@ static void unselect_rows(void) {
     }
 }
 
-static void init_pins(void) {
+__attribute__((weak)) void matrix_init_pins(void) {
     unselect_rows();
     for (uint8_t x = 0; x < MATRIX_COLS; x++) {
         setPinInputHigh_atomic(col_pins[x]);
     }
 }
 
-static bool read_cols_on_row(matrix_row_t current_matrix[], uint8_t current_row) {
+__attribute__((weak)) bool matrix_read_cols_on_row(matrix_row_t current_matrix[], uint8_t current_row) {
     // Start with a clear matrix row
     matrix_row_t current_row_value = 0;
 
-    // Select row and wait for row selecton to stabilize
+    // Select row
     select_row(current_row);
-    matrix_io_delay();
+    matrix_output_select_delay();
 
     // For each col...
     for (uint8_t col_index = 0; col_index < MATRIX_COLS; col_index++) {
@@ -129,6 +130,7 @@ static bool read_cols_on_row(matrix_row_t current_matrix[], uint8_t current_row)
 
     // Unselect row
     unselect_row(current_row);
+    matrix_output_unselect_delay();  // wait for all Col signals to go HIGH
 
     // If the row has changed, store the row and return the changed flag.
     if (current_matrix[current_row] != current_row_value) {
@@ -150,19 +152,19 @@ static void unselect_cols(void) {
     }
 }
 
-static void init_pins(void) {
+__attribute__((weak)) void matrix_init_pins(void) {
     unselect_cols();
     for (uint8_t x = 0; x < ROWS_PER_HAND; x++) {
         setPinInputHigh_atomic(row_pins[x]);
     }
 }
 
-static bool read_rows_on_col(matrix_row_t current_matrix[], uint8_t current_col) {
+__attribute__((weak)) bool matrix_read_rows_on_col(matrix_row_t current_matrix[], uint8_t current_col) {
     bool matrix_changed = false;
 
-    // Select col and wait for col selecton to stabilize
+    // Select col
     select_col(current_col);
-    matrix_io_delay();
+    matrix_output_select_delay();
 
     // For each row...
     for (uint8_t row_index = 0; row_index < ROWS_PER_HAND; row_index++) {
@@ -188,6 +190,7 @@ static bool read_rows_on_col(matrix_row_t current_matrix[], uint8_t current_col)
 
     // Unselect col
     unselect_col(current_col);
+    matrix_output_unselect_delay();  // wait for all Row signals to go HIGH
 
     return matrix_changed;
 }
@@ -230,7 +233,7 @@ void matrix_init(void) {
     thatHand = ROWS_PER_HAND - thisHand;
 
     // initialize key pins
-    init_pins();
+    matrix_init_pins();
 
     // initialize matrix state: all keys off
     for (uint8_t i = 0; i < MATRIX_ROWS; i++) {
@@ -245,48 +248,62 @@ void matrix_init(void) {
     split_post_init();
 }
 
-void matrix_post_scan(void) {
+bool matrix_post_scan(void) {
+    bool changed = false;
     if (is_keyboard_master()) {
         static uint8_t error_count;
 
-        if (!transport_master(matrix + thatHand)) {
+        matrix_row_t slave_matrix[ROWS_PER_HAND] = {0};
+        if (!transport_master(matrix + thisHand, slave_matrix)) {
             error_count++;
 
             if (error_count > ERROR_DISCONNECT_COUNT) {
                 // reset other half if disconnected
                 for (int i = 0; i < ROWS_PER_HAND; ++i) {
                     matrix[thatHand + i] = 0;
+                    slave_matrix[i]      = 0;
                 }
+
+                changed = true;
             }
         } else {
             error_count = 0;
+
+            for (int i = 0; i < ROWS_PER_HAND; ++i) {
+                if (matrix[thatHand + i] != slave_matrix[i]) {
+                    matrix[thatHand + i] = slave_matrix[i];
+                    changed              = true;
+                }
+            }
         }
 
         matrix_scan_quantum();
     } else {
-        transport_slave(matrix + thisHand);
+        transport_slave(matrix + thatHand, matrix + thisHand);
 
-        matrix_slave_scan_user();
+        matrix_slave_scan_kb();
     }
+
+    return changed;
 }
 
 uint8_t matrix_scan(void) {
-    bool changed = false;
+    bool local_changed = false;
 
 #if defined(DIRECT_PINS) || (DIODE_DIRECTION == COL2ROW)
     // Set row, read cols
     for (uint8_t current_row = 0; current_row < ROWS_PER_HAND; current_row++) {
-        changed |= read_cols_on_row(raw_matrix, current_row);
+        local_changed |= matrix_read_cols_on_row(raw_matrix, current_row);
     }
 #elif (DIODE_DIRECTION == ROW2COL)
     // Set col, read rows
     for (uint8_t current_col = 0; current_col < MATRIX_COLS; current_col++) {
-        changed |= read_rows_on_col(raw_matrix, current_col);
+        local_changed |= matrix_read_rows_on_col(raw_matrix, current_col);
     }
 #endif
 
-    debounce(raw_matrix, matrix + thisHand, ROWS_PER_HAND, changed);
+    debounce(raw_matrix, matrix + thisHand, ROWS_PER_HAND, local_changed);
 
-    matrix_post_scan();
-    return (uint8_t)changed;
+    bool remote_changed = matrix_post_scan();
+    return (uint8_t)(local_changed || remote_changed);
 }
